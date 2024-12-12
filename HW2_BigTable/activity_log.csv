@@ -1,0 +1,6 @@
+user_name,activity_type,activity_timestamp,location,device_type
+Alice,login,2024-01-01T12:00:00Z,New York,mobile
+Bob,purchase,2024-01-02T08:30:00Z,Los Angeles,desktop
+Charlie,login,2024-01-03T15:45:00Z,Chicago,tablet
+David,view,2024-01-04T09:15:00Z,Houston,mobile
+Eve,purchase,2024-01-05T14:20:00Z,Phoenix,desktop
