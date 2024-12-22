@@ -28,7 +28,7 @@ table_name = 'customer_logs'
 blob = bucket.blob(f'{table_name}.csv')
 blob.upload_from_filename(f'C:\\Users\\weihs\\桌面\\WEIHSUAN\\2024\\碩班\資料模式\\{table_name}.csv')
 #df = pd.read_csv(f'C:\\Users\\weihs\\桌面\\WEIHSUAN\\2024\\碩班\資料模式\\{table_name}.csv')
-table_ref = bigquery.TableReference(dataset_ref, table_name)
+table_ref = bigquery.TableReference(dataset, table_name)
 schema = [
             bigquery.SchemaField('log_id', 'STRING'),
             bigquery.SchemaField('timestamp', 'TIMESTAMP'),
