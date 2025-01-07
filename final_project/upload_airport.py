@@ -5,9 +5,7 @@ from google.cloud import storage
 from google.oauth2 import service_account
 from itertools import combinations
 
-
-
-os.chdir(r'C:\Users\weihs\桌面\WEIHSUAN\2024\碩班\資料模式\final_project\dataset\Arrival')
+#%% connect to storage and BQ
 
 credentials = service_account.Credentials.from_service_account_file(r"C:\Users\weihs\桌面\WEIHSUAN\2024\碩班\資料模式\final_project\data-model-final-084d9169a7a0.json")
 project_id = 'data-model-final'
@@ -20,6 +18,8 @@ new_bucket.patch()
 dataset = bigquery_client.dataset('airport')
 bigquery_client.create_dataset(dataset)
 
+
+#%% arrival data
 
 schema = [
             bigquery.SchemaField('Carrier_code', 'STRING'),
@@ -40,16 +40,10 @@ schema = [
             bigquery.SchemaField('Delay_Security', 'INTEGER'),
             bigquery.SchemaField('Delay_Late_Aircraft_Arrival', 'INTEGER')
 
-
 ]
 
 
-
-
-
-airport_folder = [airport for airport in os.listdir() if airport.endswith('csv') == False]
-
-class Airport:
+class Airport_arrival:
     def __init__(self, name):
         print(f'airport obejct named {name} is created')
         self.name = name
@@ -67,16 +61,15 @@ class Airport:
             self.df[time_col] = self.df[time_col].replace('24:00:00', '00:00')
             self.df[time_col] = self.df[time_col] + ':00'
             self.df[time_col] = pd.to_datetime(self.df[time_col], format='%H:%M:%S').dt.time
-        print(f'total sample of {self.name} is {len(self.df)}')
+        print(f'total sample of {self.name} (arrival) is {len(self.df)}')
 
     def save(self):
         self.df.to_csv(f'{self.name}.csv', index = False)
-        print(f'dataframe of airport {self.name} is saved in dataset')
-
+        print(f'dataframe of airport {self.name} (arrival) is saved in dataset')
     def to_cloud(self):
         blob = bucket.blob(f'{self.name}.csv')
         blob.upload_from_filename(f'{os.getcwd()}\\{self.name}.csv')
-        print(f'{self.name} dataframe is uploading to cloud storage')
+        print(f'{self.name} (arrival) dataframe is uploading to cloud storage')
     def bq_ref(self):
         table_ref = bigquery.TableReference(globals()['dataset'], self.name)
         table = bigquery.Table(table_ref, schema = globals()['schema'])
@@ -90,10 +83,10 @@ class Airport:
 
 
 
-MSP = Airport('MSP')
-MSP.load()
+os.chdir(r'C:\Users\weihs\桌面\WEIHSUAN\2024\碩班\資料模式\final_project\dataset\Arrival')
+airport_folder = [airport for airport in os.listdir() if airport.endswith('csv') == False]
 for airport in airport_folder:
-    globals()[airport] = Airport(airport)
+    globals()[airport] = Airport_arrival(airport)
     globals()[airport].load()
     globals()[airport].save()
     globals()[airport].to_cloud()
@@ -101,17 +94,8 @@ for airport in airport_folder:
     
 
 
-df = pd.DataFrame()
 
-for obj in os.listdir():
-    tmp = pd.read_csv(obj)
-    df = pd.concat([df, tmp], axis = 0, ignore_index=True)
-
-for i in df.columns:
-    if pd.isna(df[i]).value_counts()[False] < len(df[i]):
-        print(f'NA exist in {i}')
-
-#%%
+#%% departure data
 
 schema_dep = [
             bigquery.SchemaField('Carrier_code', 'STRING'),
@@ -132,17 +116,14 @@ schema_dep = [
             bigquery.SchemaField('Delay_Security', 'INTEGER'),
             bigquery.SchemaField('Delay_Late_Aircraft_Arrival', 'INTEGER')
 
-
 ]
-
-os.chdir(r'C:\Users\weihs\桌面\WEIHSUAN\2024\碩班\資料模式\final_project\dataset\Departure')
 
 class Airport_dep:
     def __init__(self, name):
         print(f'airport obejct named {name} is created')
         self.name = name
         self.df = pd.DataFrame()
-
+#
     def load(self):
         self.df = pd.DataFrame()
         print(f'dataframe of airport {self.name} is loading')
@@ -151,17 +132,16 @@ class Airport_dep:
             self.df = pd.concat([self.df, tmp],axis = 0, ignore_index=True)
             print(f'{obj} row is {len(tmp)}')
         self.df['Date (MM/DD/YYYY)']  = pd.to_datetime(self.df.iloc[:,1],format='%m/%d/%Y').dt.strftime('%Y-%m-%d')
-        # for time_col in ['Scheduled departure Time', 'Actual departure Time', 'Wheels-on Time']:
-        #     self.df[time_col] = self.df[time_col].replace('24:00:00', '00:00')
-        #     self.df[time_col] = self.df[time_col].reaplace()
-        #     self.df[time_col] = self.df[time_col] + ':00'
-        #     self.df[time_col] = pd.to_datetime(self.df[time_col], format='%H:%M:%S').dt.time
-        print(f'total sample of {self.name} is {len(self.df)}')
-
+        for time_col in ['Scheduled departure time', 'Actual departure time', 'Wheels-off time']:
+            self.df[time_col] = self.df[time_col].replace('24:00:00', '00:00')
+            self.df[time_col] = self.df[time_col] + ':00'
+            self.df[time_col] = pd.to_datetime(self.df[time_col], format='%H:%M:%S').dt.time
+        print(f'total sample of {self.name} (departure) is {len(self.df)}')
+#
     def save(self):
         self.df.to_csv(f'{self.name}_dep.csv', index = False)
-        print(f'dataframe of airport {self.name} is saved in dataset')
-
+        print(f'dataframe of airport {self.name}  (departure)  is saved in dataset')
+#
     def to_cloud(self):
         blob = bucket.blob(f'{self.name}_dep.csv')
         blob.upload_from_filename(f'{os.getcwd()}\\{self.name}_dep.csv')
@@ -178,34 +158,13 @@ class Airport_dep:
         print(f'{self.name} table is created in BigQuery')
 
 
-
-ATL = Airport_dep('ATL')
-ATL.load()
-
-ATL.df['Date (MM/DD/YYYY)']  = pd.to_datetime(ATL.df.iloc[:,1],format='%m/%d/%Y').dt.strftime('%Y-%m-%d')
-for time_col in ['Scheduled departure time', 'Actual departure time', 'Wheels-off time']:
-        ATL.df[time_col] = ATL.df[time_col].replace('24:00:00', '00:00')
-        ATL.df[time_col] = ATL.df[time_col] + ':00'
-        ATL.df[time_col] = pd.to_datetime(ATL.df[time_col], format='%H:%M:%S').dt.time
-ATL.save()
-ATL.to_cloud()
-ATL.bq_ref()
+os.chdir(r'C:\Users\weihs\桌面\WEIHSUAN\2024\碩班\資料模式\final_project\dataset\Departure')
+airport_folder = [airport for airport in os.listdir() if airport.endswith('csv') == False]
 
 for airport in airport_folder:
-    globals()[airport] = Airport(airport)
+    globals()[airport] = Airport_dep(airport)
     globals()[airport].load()
     globals()[airport].save()
     globals()[airport].to_cloud()
     globals()[airport].bq_ref()
     
-
-
-df = pd.DataFrame()
-
-for obj in os.listdir():
-    tmp = pd.read_csv(obj)
-    df = pd.concat([df, tmp], axis = 0, ignore_index=True)
-
-for i in df.columns:
-    if pd.isna(df[i]).value_counts()[False] < len(df[i]):
-        print(f'NA exist in {i}')
